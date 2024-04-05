@@ -19,7 +19,7 @@ int EventFilter(void *userdata, SDL_Event *event)
 
 int main()
 {
-    App app("Snake", 600, 600, 0, SDL_RENDERER_ACCELERATED);
+    App app("Snake", 600, 600, SDL_INIT_VIDEO, 0);
     app.SetWindowMinimumSize(300, 300);
     SDL_SetEventFilter(EventFilter, &app);
 
@@ -29,21 +29,20 @@ int main()
 
     FPSmanager fps;
     SDL_initFramerate(&fps);
-    SDL_setFramerate(&fps, 30);
+    SDL_setFramerate(&fps, 60);
 
     Uint64 NOW = SDL_GetPerformanceCounter();
     Uint64 LAST = 0;
     float deltaTime = 0;
 
     SDL_Event event;
-    bool quit = false;
-    while (!quit)
+    while (!app.quit)
     {
         LAST = NOW;
         NOW = SDL_GetPerformanceCounter();
         deltaTime = ((NOW - LAST) / (float)SDL_GetPerformanceFrequency());
 
-        app.Update(event, quit, deltaTime);
+        app.Update(event, deltaTime);
         app.Draw();
         SDL_framerateDelay(&fps);
     }

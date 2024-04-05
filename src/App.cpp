@@ -1,11 +1,12 @@
 #include "App.h"
 
-App::App(const char *window_title, int window_width, int window_height, Uint32 window_flags, Uint32 renderer_flags, Uint32 sdl_init_flags)
+App::App(const char *window_title, int window_width, int window_height, Uint32 sdl_init_flags, Uint32 window_flags, const char *renderer_name)
     : window_title(window_title), initial_window_width(window_width), initial_window_height(window_height), window_width(window_width), window_height(window_height), isMouseHidden(false)
 {
     if (SDL_Init(sdl_init_flags) != 0)
     {
         SDL_Log("Failed to initialize SDL: %s\n", SDL_GetError());
+        quit = true;
         return;
     }
 
@@ -14,16 +15,23 @@ App::App(const char *window_title, int window_width, int window_height, Uint32 w
     {
         SDL_Log("Failed to create SDL window: %s\n", SDL_GetError());
         SDL_Quit();
+        quit = true;
         return;
     }
 
-    renderer = SDL_CreateRenderer(window, NULL, renderer_flags);
+    renderer = SDL_CreateRenderer(window, renderer_name, 0);
     if (!renderer)
     {
         SDL_Log("Failed to create SDL renderer: %s\n", SDL_GetError());
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return;
+        renderer = SDL_CreateRenderer(window, NULL, 0);
+        if (!renderer)
+        {
+            SDL_Log("Failed to create SDL renderer: %s\n", SDL_GetError());
+            SDL_DestroyWindow(window);
+            SDL_Quit();
+            quit = true;
+            return;
+        }
     }
     SDL_RendererInfo info;
     SDL_GetRendererInfo(renderer, &info);
@@ -43,12 +51,13 @@ App::App(const char *window_title, int window_width, int window_height, Uint32 w
     scale_factor_x = static_cast<float>(window_width) / initial_window_width;
     scale_factor_y = static_cast<float>(window_height) / initial_window_height;
     scale_factor = std::min(scale_factor_x, scale_factor_y);
+    quit = false;
 }
 
 App::~App()
 {
-    
-#ifdef IMGUI    
+
+#ifdef IMGUI
     ImGui_ImplSDLRenderer3_Shutdown();
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
